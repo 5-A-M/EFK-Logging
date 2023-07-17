@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: efk-logging
+data:
+  fluent.conf: |
+    <source>
+      @type tail
+      path /var/log/containers/ingress-nginx-controller-*.log
+      pos_file /var/log/ingress-nginx-access.log.pos
+      tag ingress-nginx
+      read_from_head true
+      <parse>
+        @type none
+      </parse>
+    </source>
+
+    <filter ingress-nginx>
+      @type stdout
+      <parse>
+        @type regexp
+        expression /^(?<time>\d+-\d+-\d+ \d+:\d+:\d+)\s+\[\w+\]:\s+(?<client_ip>\d+\.\d+\.\d+\.\d+)\s+-\s+-\s+\[\d+\/\w+\/\d+:\d+:\d+:\d+\s+\+\d+\]\s+"(?<http_method>\w+)\s+(?<request>[^"]+)"\s+(?<http_version>\w+\/\d+\.\d+)"\s+(?<status_code>\d+)\s+(?<response_size>\d+)\s+"([^"]*)"\s+"(?<user_agent>[^"]*)"\s+(?<time_taken>\d+\.\d+)"\s+\[(?<server_ip>\d+\.\d+\.\d+\.\d+):\d+\]\s+(?<time_taken_again>\d+\.\d+)\s+(?<status_code_again>\d+)\s+(?<hash>\w+)$/
+        time_key time
+        time_format %Y-%m-%d %H:%M:%S %z
+      </parse>
+    </filter>
+
+
+    <match ingress-nginx>
+      @type elasticsearch
+      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      user "#{ENV['FLUENT_ELASTICSEARCH_USER']}"
+      password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'http'}"
+      ssl_verify "#{ENV['FLUENT_ELASTICSEARCH_SSL_VERIFY'] || 'true'}"
+      logstash_format true
+      logstash_prefix ingress-nginx-log
+      flush_interval 1s
+    </match>
+
+
+    <source>
+      @type tail
+      path /var/log/containers/user-service-*_app_istio-proxy-*.log
+      pos_file /var/log/user-service.log.pos
+      tag user-service
+      read_from_head true
+      <parse>
+        @type none
+      </parse>
+    </source>
+
+    <match user-service>
+      @type elasticsearch
+      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      user "#{ENV['FLUENT_ELASTICSEARCH_USER']}"
+      password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'http'}"
+      ssl_verify "#{ENV['FLUENT_ELASTICSEARCH_SSL_VERIFY'] || 'true'}"
+      logstash_format true
+      logstash_prefix user-service-log
+      flush_interval 1s
+    </match>
+
+
+
+    <source>
+      @type tail
+      path /var/log/containers/item-service-*_app_istio-proxy-*.log
+      pos_file /var/log/item-service.log.pos
+      tag item-service
+      read_from_head true
+      <parse>
+        @type none
+      </parse>
+    </source>
+
+    <match item-service>
+      @type elasticsearch
+      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      user "#{ENV['FLUENT_ELASTICSEARCH_USER']}"
+      password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'http'}"
+      ssl_verify "#{ENV['FLUENT_ELASTICSEARCH_SSL_VERIFY'] || 'true'}"
+      logstash_format true
+      logstash_prefix item-service-log
+      flush_interval 1s
+    </match>
+
+
+
+    <source>
+      @type tail
+      path /var/log/containers/order-service-*_app_istio-proxy-*.log
+      pos_file /var/log/order-service.log.pos
+      tag order-service
+      read_from_head true
+      <parse>
+        @type none
+      </parse>
+    </source>
+
+    <match order-service>
+      @type elasticsearch
+      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      user "#{ENV['FLUENT_ELASTICSEARCH_USER']}"
+      password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'http'}"
+      ssl_verify "#{ENV['FLUENT_ELASTICSEARCH_SSL_VERIFY'] || 'true'}"
+      logstash_format true
+      logstash_prefix order-service-log
+      flush_interval 1s
+    </match>
